@@ -1,31 +1,56 @@
 import 'package:flutter/material.dart';
-import 'package:todoey_flutter/models/task.dart';
+import 'package:provider/provider.dart';
+import 'package:todoey_flutter/models/task_data.dart';
 import 'package:todoey_flutter/widgets/task_tile.dart';
 
-class TasksList extends StatefulWidget {
-  final List<Task> tasks;
-
-  TasksList({this.tasks});
-
-  @override
-  _TasksListState createState() => _TasksListState();
-}
-
-class _TasksListState extends State<TasksList> {
+class TasksList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-        itemCount: widget.tasks.length,
-        itemBuilder: (context, index) {
-          return TaskTile(
-            taskTitle: widget.tasks[index].name,
-            isChecked: widget.tasks[index].isDone,
-            checkboxCallback: (checkboxState) {
-              setState(() {
-                widget.tasks[index].toggleDone();
-              });
-            },
-          );
-        });
+    return Consumer<TaskData>(
+      builder: (context, taskData, child) {
+        return ListView.builder(
+            itemCount: taskData.taskCount,
+            itemBuilder: (context, index) {
+              final task = taskData.tasks[index];
+              return TaskTile(
+                taskTitle: task.name,
+                isChecked: task.isDone,
+                checkboxCallback: (checkboxState) {
+                  taskData.updateTask(task);
+                },
+                longPressCallback: () {
+                  showDialog<void>(
+                    context: context,
+                    barrierDismissible: false,
+                    // false = user must tap button, true = tap outside dialog
+                    builder: (BuildContext dialogContext) {
+                      return AlertDialog(
+                        title: Text('Deseja deletar a tarefa?'),
+                        content: Text('Não será possivel desfazer essa ação'),
+                        actions: <Widget>[
+                          FlatButton(
+                            child: Text('Cancelar'),
+                            onPressed: () {
+                              Navigator.of(dialogContext)
+                                  .pop(); // Dismiss alert dialog
+                            },
+                          ),
+                          FlatButton(
+                            child: Text('Delete'),
+                            onPressed: () {
+                              taskData.deleteTask(task);
+                              Navigator.of(dialogContext)
+                                  .pop(); // Dismiss alert dialog
+                            },
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                },
+              );
+            });
+      },
+    );
   }
 }
